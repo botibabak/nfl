@@ -1,0 +1,196 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(readr)
+ArrestIncidents <- read_csv("ArrestIncidents.csv")
+head(ArrestIncidents)
+```
+
+```{r}
+ViolentArrests <-ArrestIncidents[(ArrestIncidents$VIOLENT == 1 & ArrestIncidents$CASE == 'Arrested'),]
+head(ViolentArrests)
+```
+
+#Head Injuries & Arrests
+
+```{r}
+library(readr)
+Head_Injured_Players <- read_csv("Head Injured Players.csv")
+head(Head_Injured_Players)
+```
+
+```{r}
+Head_Injured_Players$`Roles during injuries` <- as.factor(Head_Injured_Players$`Roles during injuries`)
+attributes(Head_Injured_Players$`Roles during injuries`)
+
+injuries.positions <- aggregate(Head_Injured_Players$`Total Number of Injuries (2012-2014)`, by=list(Role = Head_Injured_Players$`Roles during injuries`), FUN = sum)
+head(injuries.positions)
+injuries.positions <- injuries.positions[order(injuries.positions[,2],decreasing=TRUE),]
+
+colnames(injuries.positions) <- c("Position", "Number of injuries")
+par(las=2)
+barplot(injuries.positions$`Number of injuries`,
+        names = injuries.positions$Position,
+        col = ifelse(injuries.positions$Position == 'Linebacker' ,'red', ifelse(injuries.positions$Position == 'Cornerback' ,'steelblue1', ifelse(injuries.positions$Position == 'Wide Receiver' ,'gold', ifelse(injuries.positions$Position == 'Safety' ,'limegreen', ifelse(injuries.positions$Position == 'Running Back' ,'darkmagenta', ifelse(injuries.positions$Position == 'Tight End' ,'orchid', 'grey')))))),
+        horiz = TRUE,
+        cex.names = .5,
+        main="Number of head injuries in the 2012-2014 NFL seasons by posts")
+```
+A továbbiakban leginkább a 6 más színnel jelölt poszton lesz a hangsúly, mivel ők a legérdekesebbek a szempontunkból.
+Mint látható a legtöbb fejsérülést az olyan poszton játszók szenvedték el, akik nagy sebességgel ütköznek (Safety, Wide Receiver, Cornerback).
+
+
+
+```{r}
+ViolentArrests$POSITION <- as.factor(ViolentArrests$POSITION)
+attributes(ViolentArrests$POSITION)
+
+arrests.position <- aggregate(ViolentArrests$VIOLENT, by=list(Role = ViolentArrests$POSITION), FUN = sum)
+head(arrests.position)
+arrests.position <- arrests.position[order(arrests.position[,2],decreasing=TRUE),]
+
+
+colnames(arrests.position) <- c("Position", "Number of arrests")
+par(las=2)
+barplot(arrests.position$`Number of arrests`,
+        names = arrests.position$Position,
+        col = ifelse(arrests.position$Position == 'Linebacker' ,'red', ifelse(arrests.position$Position == 'Cornerback' ,'steelblue1', ifelse(arrests.position$Position == 'Wide Receiver' ,'gold', ifelse(arrests.position$Position == 'Safety' ,'limegreen', ifelse(arrests.position$Position == 'Running Back' ,'darkmagenta', ifelse(arrests.position$Position == 'Tight End' ,'orchid', 'grey')))))),
+        horiz = TRUE,
+        cex.names = .5,
+        main="Number of arrests for violent crimes 2000-2017 by posts")
+```
+Viszont mint ahogy itt láthatjuk, annak ellenére, hogy az adott intervallumban a Linebackerek csak az ötödik legtöbb fejsérülést szenvedték az adott időintervallum alatt, mégis magasan ők követik el a legtöbb erőszakos bűncselekményt.
+
+
+```{r}
+ArrestsAndInjuries <- merge(arrests.position, injuries.positions,  by = 'Position')
+head(ArrestsAndInjuries)
+
+inj.without.linebackers <- ArrestsAndInjuries[(ArrestsAndInjuries$Position != 'Linebacker'),]
+head(inj.without.linebackers)
+
+
+plot(ArrestsAndInjuries$`Number of injuries`, ArrestsAndInjuries$`Number of arrests`, type = "n")
+text(ArrestsAndInjuries$`Number of injuries`, ArrestsAndInjuries$`Number of arrests`, labels = ArrestsAndInjuries$Position, cex=0.7,col = ifelse(ArrestsAndInjuries$Position == 'Linebacker' ,'red', ifelse(ArrestsAndInjuries$Position == 'Cornerback' ,'steelblue1', ifelse(ArrestsAndInjuries$Position == 'Wide Receiver' ,'gold', ifelse(ArrestsAndInjuries$Position == 'Safety' ,'limegreen', ifelse(ArrestsAndInjuries$Position == 'Running Back' ,'darkmagenta', ifelse(ArrestsAndInjuries$Position == 'Tight End' ,'orchid', 'black')))))),)
+abline(lm(inj.without.linebackers$`Number of arrests`~ inj.without.linebackers$`Number of injuries` ))
+```
+Ez látszódik ezen az ábrán is. Az egyenes a linebackerek nélküli átlagot mutatja, mint látható a poszt jóval felette helyezkedik el.
+
+
+#Concussion & arrests
+
+```{r}
+library(readr)
+Concussion_Injuries_2012_2014 <- read_csv("Concussion Injuries 2012-2014.csv")
+```
+
+
+
+```{r}
+Concussion_Injuries_2012_2014$Position <- as.factor(Concussion_Injuries_2012_2014$Position)
+attributes(Concussion_Injuries_2012_2014$Position)
+
+conc.positions <- aggregate(Concussion_Injuries_2012_2014$ID, by=list(Role = Concussion_Injuries_2012_2014$Position), FUN = length)
+head(conc.positions)
+
+conc.positions <- conc.positions[order(conc.positions[,2],decreasing=TRUE),]
+
+colnames(conc.positions) <- c("Position", "Number of injuries")
+par(las=2)
+barplot(conc.positions$`Number of injuries`,
+        names = conc.positions$Position,
+        col = ifelse(conc.positions$Position == 'Linebacker' ,'red', ifelse(conc.positions$Position == 'Cornerback' ,'steelblue1', ifelse(conc.positions$Position == 'Wide Receiver' ,'gold', ifelse(conc.positions$Position == 'Safety' ,'limegreen', ifelse(conc.positions$Position == 'Running Back' ,'darkmagenta', ifelse(conc.positions$Position == 'Tight End' ,'orchid', 'grey')))))),
+        horiz = TRUE,
+        cex.names = .5,
+        main="Number of concussions in the 2012-2014 NFL seasons by posts")
+```
+Ezért megnéztem, hogy a kizárólag agyrázkódások terén hogyan mutatnak a posztok, de a Linebackerek itt méghátrébb sorolódtak.
+
+```{r}
+ArrestsAndConcussions <- merge(arrests.position, conc.positions,  by = 'Position')
+head(ArrestsAndConcussions)
+
+
+conc.without.linebackers <- ArrestsAndConcussions[(ArrestsAndConcussions$Position != 'Linebacker'),]
+head(conc.without.linebackers)
+
+plot(ArrestsAndConcussions$`Number of injuries`, ArrestsAndConcussions$`Number of arrests`,  type = "n")
+text(ArrestsAndConcussions$`Number of injuries`, ArrestsAndConcussions$`Number of arrests`, labels = ArrestsAndConcussions$Position, cex=0.7, col = ifelse(ArrestsAndConcussions$Position == 'Linebacker' ,'red', ifelse(ArrestsAndConcussions$Position == 'Cornerback' ,'steelblue1', ifelse(ArrestsAndConcussions$Position == 'Wide Receiver' ,'gold', ifelse(ArrestsAndConcussions$Position == 'Safety' ,'limegreen', ifelse(ArrestsAndConcussions$Position == 'Running Back' ,'darkmagenta', ifelse(ArrestsAndConcussions$Position == 'Tight End' ,'orchid', 'black')))))))
+
+abline(lm(conc.without.linebackers$`Number of arrests`~ conc.without.linebackers$`Number of injuries` ))
+```
+Egyértelműen nem segített a helyzeten, még mindig kiugró értéket mutat.
+
+
+#All Arrests
+
+```{r}
+Arrests <-ArrestIncidents[(ArrestIncidents$CASE == 'Arrested'),]
+head(Arrests)
+```
+
+```{r}
+Arrests$POSITION <- as.factor(Arrests$POSITION)
+attributes(Arrests$POSITION)
+
+allArrests.positions <- aggregate(Arrests$CASE, by=list(Role = Arrests$POSITION), FUN = length)
+allArrests.positions <- allArrests.positions[order(allArrests.positions[,2],decreasing=TRUE),]
+head(allArrests.positions)
+colnames(allArrests.positions) <- c("Position", "Number of arrests")
+par(las=2)
+barplot(allArrests.positions$`Number of arrests`,
+        names = allArrests.positions$Position,
+        col = ifelse(allArrests.positions$Position == 'Linebacker' ,'red', ifelse(allArrests.positions$Position == 'Cornerback' ,'steelblue1', ifelse(allArrests.positions$Position == 'Wide Receiver' ,'gold', ifelse(allArrests.positions$Position == 'Safety' ,'limegreen', ifelse(allArrests.positions$Position == 'Running Back' ,'darkmagenta', ifelse(allArrests.positions$Position == 'Tight End' ,'orchid', 'grey')))))),
+        horiz = TRUE,
+        cex.names = .5,
+        main="Number arrests 2000-2017 by posts")
+```
+Ugyan az agyrázkódások okozta CTE miatt kialakuló erőszakos viselkedést próbáltam vizsgálni, de a linebackerek miatt kíváncsi voltam, hogy vajon az összes bűntény elkövetése tekintetében mit mutatnak ezek a számok. Mint látható itt a linebackerek már a második legtöbb bűntény elkövetésével 'büszkélkedhetnek'.
+
+
+```{r}
+AllArrestsAndInjuries <- merge(allArrests.positions, conc.positions,  by = 'Position')
+head(AllArrestsAndInjuries)
+
+plot(AllArrestsAndInjuries$`Number of injuries`, AllArrestsAndInjuries$`Number of arrests`,  type = "n")
+text(AllArrestsAndInjuries$`Number of injuries`, AllArrestsAndInjuries$`Number of arrests`, labels = AllArrestsAndInjuries$Position, cex=0.7, col = ifelse(AllArrestsAndInjuries$Position == 'Linebacker' ,'red', ifelse(AllArrestsAndInjuries$Position == 'Cornerback' ,'steelblue1', ifelse(AllArrestsAndInjuries$Position == 'Wide Receiver' ,'gold', ifelse(AllArrestsAndInjuries$Position == 'Safety' ,'limegreen', ifelse(AllArrestsAndInjuries$Position == 'Running Back' ,'darkmagenta', ifelse(AllArrestsAndInjuries$Position == 'Tight End' ,'orchid', 'black')))))))
+
+abline(lm(AllArrestsAndInjuries$`Number of arrests`~ AllArrestsAndInjuries$`Number of injuries`))
+```
+És mint látható, még mindig a várható érték felett helyezkednek el, de már nem akkora a különbség.
+
+
+#Snaps after injury
+
+```{r}
+snaps.positions <- aggregate(Concussion_Injuries_2012_2014$`Play Time After Injury`, by =list(Role = Concussion_Injuries_2012_2014$Position), FUN=mean, na.rm=TRUE)
+snaps.positions
+
+snaps.positions <- snaps.positions[order(snaps.positions[,2],decreasing=TRUE),]
+
+colnames(snaps.positions) <- c("Position", "Number of snaps")
+par(las=2)
+barplot(snaps.positions$`Number of snaps`,
+        names = snaps.positions$Position,
+        col = ifelse(snaps.positions$Position == 'Linebacker' ,'red', ifelse(snaps.positions$Position == 'Cornerback' ,'steelblue1', ifelse(snaps.positions$Position == 'Wide Receiver' ,'gold', ifelse(snaps.positions$Position == 'Safety' ,'limegreen', ifelse(snaps.positions$Position == 'Running Back' ,'darkmagenta', ifelse(snaps.positions$Position == 'Tight End' ,'orchid', 'grey')))))),
+        horiz = TRUE,
+        cex.names = .55,
+        main="Average number of snaps played by the player after the injury in the 2012-2014 NFL seasons by posts",)
+
+```
+Mivel az erőszakos viselkedést ezzel még mindig nem tudtam magyarázni, ezért egy új dataset segítségével elkezdtem vizsgálni, hogy esetleg befolyásolja-e az agyrázkódás 'minőségét' (mennyire súlyos, mennyire roncsolhatja az agyat) az, hogy az egyrázkódás után a sérülést szenvedett játékos hány snapet játszott(snap: egy snap akkor kezdődik, amikor a támadó oldal egy játékosa, a center feladja a labdát maga mögé egy másik játékosnak, és akkor van vége, amikor a labda már nincs játékban (oldalvonalon kívül van, bizonyos események után földet ér stb.). Egy snap végeztével a játékosok újra felállnak támadó és védőpozícióba és indítják a következő snapet. Egy snap általában néhány másodperc.). Itt valamennyire számítottam arra, hogy a Wide Receiverek, Tight endek és Running Backek hátrébb fognak esni, mert szokás nagyobb játékok után egy-egy jól teljesítő játékost lehozni a pályáról, és általában a támadó oldalon feltűnőbb egy-egy nagyobb játék, viszont az is látszik, hogy a nem nagy sebességgel ütköző falemberek játszanak a legtöbbet a sérülés után, ami valószínűleg azért lehet, mert a falban nem olyan könnyű észrevenni egy-egy sérülést.
+
+```{r}
+snapsAndArrests <- merge(snaps.positions, arrests.position,  by = 'Position', all = FALSE)
+snapsAndArrests
+
+plot(snapsAndArrests$`Number of snaps`, snapsAndArrests$`Number of arrests`,  type = "n")
+text(snapsAndArrests$`Number of snaps`, snapsAndArrests$`Number of arrests`, labels =snapsAndArrests$Position, cex=0.7, col = ifelse(snapsAndArrests$Position == 'Linebacker' ,'red', ifelse(snapsAndArrests$Position == 'Cornerback' ,'steelblue1', ifelse(snapsAndArrests$Position == 'Wide Receiver' ,'gold', ifelse(snapsAndArrests$Position == 'Safety' ,'limegreen', ifelse(snapsAndArrests$Position == 'Running Back' ,'darkmagenta', ifelse(snapsAndArrests$Position == 'Tight End' ,'orchid', 'black')))))))
+```
+Viszont mivel azok, akik a legtöbbet maradtak a pályán miután fejsérülést szenvedtek általában nem követnek el annyi bűntényt, a fekete bárány még mindig a Linebacker pozíció.
+
+Sajnos sok mindenen gondolkodtam, miért lehet ez, odáig is eljutottam, hogy az újonnan NFL-be kerülő játékosok egy általános intelligenciatesztjét vegyem figyelembe, de sajnos ezekről nem olyan sok információ érhető el, mert leginkább az irányítók szokták felhozni, ők pedig nem játszottak nagy szerepet az eddigiekben.
+
+Arra tudok gondolni, hogy mivel az NFL játékosok nagyrésze általában próbálja a sérüléseit eltitkolni (vannak akik az agyrázkódásaikat is évekkel később vallják be), és a linebacker egy elég 'agresszív' poszt, ahol elég sok ütközés történik, valószínűleg az ezen a poszton játszó játékosok nem is vallják be a csapatuknak, hogy agyrázkódásuk lehet nehogy pénztől essenek el esetleges kihagyások miatt, valamint a sok kisebb ütközés sem veszélytelen, nem jár agyrázkódással vagy csak kisebb agyrázkódást szenvednek a játékosok, de az agyuk ugyanúgy károsodik tőle. Az ilyen kis ütközéseket viszont nem regisztráják sérülésként, ami elferdítheti az adatokat.
